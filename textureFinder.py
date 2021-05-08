@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os.path
-from curses.ascii import isalpha, isdigit
+from curses.ascii import islower, isdigit
 from os import path, mkdir, rename
 import textureExtractor as texExtract
 
@@ -51,7 +51,7 @@ def fnCheck(prevBytes, index):
     while len(prevBytes)+i > 1:
         currByte = prevBytes[i]
         #print("currByte: " + str(currByte))
-        if isalpha(int.from_bytes(currByte, "big")) or isdigit(int.from_bytes(currByte, "big")) or currByte.hex() == "5f":
+        if islower(int.from_bytes(currByte, "big")) or isdigit(int.from_bytes(currByte, "big")) or currByte.hex() == "5f":
             matchedBytes += 1
             #print(b''.join(prevBytes[i:index]))
         else:
