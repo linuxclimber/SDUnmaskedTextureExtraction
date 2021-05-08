@@ -67,16 +67,12 @@ def extractTexture(textureName):
         imageBytes = (width*height)//2
         imageData = f.read(imageBytes)
         f.read(32)
-        createPNG(width, height, imageData, textureName)
+        createPNGFromCMPR(width, height, imageData, textureName)
     else:
         print("Failed to find texture '" + textureName + "' in file!")
-            
-def createPNG(width, height, imageData, fileName):
-    global subBlockNum
-    global blockNum
-    subBlockNum = 0
-    blockNum = 0
 
+         
+def createPNGFromCMPR(width, height, imageData, fileName):
     full = [0]*4
     full = [full]*width
     full = [full]*height
@@ -96,8 +92,6 @@ def createPNG(width, height, imageData, fileName):
     new_image.save("textures/" + fileName + ".png")
 
 def generateNextBlock(imageData):
-    global blockNum
-    blockNum += 1
     block=[0]*4
     block=[block]*8
     block=[block]*8
@@ -114,8 +108,6 @@ def generateNextBlock(imageData):
     return imageData, block
 
 def generateSubBlock(imageData):
-    global subBlockNum
-    subBlockNum += 1
     sub=[0]*4
     sub=[sub]*4
     sub=[sub]*4
