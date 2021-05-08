@@ -34,10 +34,11 @@ def extractTexture(textureName):
         #Skip over the unknown metadata stuff
         prevBytes = []
         consecutiveNulls = 0
-        while consecutiveNulls < 4:
+        while consecutiveNulls < 4 or (f.tell() % 4 != 0):
             currByte = f.read(1)
 
             if not currByte:
+                print("End of file reached while searching for image metadata!")
                 break #eof
             
             if currByte.hex() == "00":
@@ -76,7 +77,7 @@ def createPNG(width, height, imageData, fileName):
     subBlockNum = 0
     blockNum = 0
 
-    full = [0]*3
+    full = [0]*4
     full = [full]*width
     full = [full]*height
     full = np.array(full, dtype=np.uint8)
@@ -89,14 +90,15 @@ def createPNG(width, height, imageData, fileName):
                     full[(x*8) + blockx, (y*8) + blocky, 0] = block[blockx,blocky,0]
                     full[(x*8) + blockx, (y*8) + blocky, 1] = block[blockx,blocky,1]
                     full[(x*8) + blockx, (y*8) + blocky, 2] = block[blockx,blocky,2]
+                    full[(x*8) + blockx, (y*8) + blocky, 3] = block[blockx,blocky,3]
 
-    new_image = Image.fromarray(full, "RGB")
+    new_image = Image.fromarray(full, "RGBA")
     new_image.save("textures/" + fileName + ".png")
 
 def generateNextBlock(imageData):
     global blockNum
     blockNum += 1
-    block=[0]*3
+    block=[0]*4
     block=[block]*8
     block=[block]*8
     block = np.array(block, dtype=np.uint8)
@@ -108,12 +110,13 @@ def generateNextBlock(imageData):
                     block[(x*4) + subx, (y*4) + suby, 0] = subBlock[subx,suby,0]
                     block[(x*4) + subx, (y*4) + suby, 1] = subBlock[subx,suby,1]
                     block[(x*4) + subx, (y*4) + suby, 2] = subBlock[subx,suby,2]
+                    block[(x*4) + subx, (y*4) + suby, 3] = subBlock[subx,suby,3]
     return imageData, block
 
 def generateSubBlock(imageData):
     global subBlockNum
     subBlockNum += 1
-    sub=[0]*3
+    sub=[0]*4
     sub=[sub]*4
     sub=[sub]*4
     sub = np.array(sub, dtype=np.uint8)
@@ -126,10 +129,11 @@ def generateSubBlock(imageData):
     for y in range(4):
         rowByte = imageData[4+y]
         for x in range(4):
-            RGB565 = colors[(rowByte >> ((3-x)*2) & 0b11)]
-            sub[y,x,0] = RGB565[0]
-            sub[y,x,1] = RGB565[1]
-            sub[y,x,2] = RGB565[2]
+            RGB = colors[(rowByte >> ((3-x)*2) & 0b11)]
+            sub[y,x,0] = RGB[0]
+            sub[y,x,1] = RGB[1]
+            sub[y,x,2] = RGB[2]
+            sub[y,x,3] = RGB[3]
     return imageData[8:], sub
 
 
@@ -137,17 +141,18 @@ def convertRGB(RGB565):
     R = (RGB565 & 0b1111100000000000) >> 8
     G = (RGB565 & 0b0000011111100000) >> 3
     B = (RGB565 & 0b0000000000011111) << 3
-    return [R, G, B]
+    return [R, G, B, 0xFF]
 
 def getOtherColors(c0, c1):
-    c2 = [0,0,0]
-    c3 = [0,0,0]
+    c2 = [0,0,0,0xFF]
+    c3 = [0,0,0,0xFF]
     if c0 > c1:
         for i in range(3):
             interval = abs(c0[i]-c1[i])/3
             c2[i] = round(min(c0[i], c1[i]) + interval)
             c3[i] = round(max(c0[i], c1[i]) - interval)
     else:
+        c3[3] = 0x00 #Set last color to transparent
         for i in range(3):
             c2[i] = (c0[i] + c1[i])//2
 
