@@ -30,7 +30,7 @@ def findCMPRTextures():
         if hexStr == "0000000e00000000" or hexStr == "0000000600000000":
             index = -17
             #print("CMPR Texture found.  Getting filename now")
-            while len(prevBytes)+index > 1 and index > -70:
+            while len(prevBytes)+index > 1 and index > -100:
                 #print(prevBytes[index].hex)
                 if prevBytes[index].hex() == "00":
                     #print("Checking if filename")
@@ -55,7 +55,7 @@ def fnCheck(prevBytes, index):
             matchedBytes += 1
             #print(b''.join(prevBytes[i:index]))
         else:
-            if matchedBytes >= 6:
+            if matchedBytes >= 2:
                 return True, i+1
             return False, i
         i -= 1

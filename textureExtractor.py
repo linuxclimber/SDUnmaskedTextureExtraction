@@ -15,7 +15,7 @@ def main():
     extractTexture(textureName)
     
 def extractTexture(textureName):
-    print("Attempting to extract " + textureName + " from TEXDIC.htd")
+    #print("Attempting to extract " + textureName + " from TEXDIC.htd")
     f = open("TEXDIC.htd", "rb")
     matchedBytes = 0
     
@@ -30,7 +30,7 @@ def extractTexture(textureName):
             matchedBytes = 0
 
     if matchedBytes >= (len(textureName)) and f.read(1).hex() == "00":
-        print("Successfully found texture '" + textureName + "' in file! Extracting...")
+        #print("Successfully found texture '" + textureName + "' in file! Extracting...")
         #Skip over the unknown metadata stuff
         prevBytes = []
         consecutiveNulls = 0
@@ -57,7 +57,7 @@ def extractTexture(textureName):
         #Read the height/width
         width = int.from_bytes(b''.join(prevBytes[-16:-12]), byteorder='big')
         height = int.from_bytes(b''.join(prevBytes[-12:-8]), byteorder='big')
-        print("Texture Size: " + str(width) + "x" + str(height))
+        #print("Texture Size: " + str(width) + "x" + str(height))
 
         if width <=0 or height <= 0:
             print("Invalid size.  Skipping")
