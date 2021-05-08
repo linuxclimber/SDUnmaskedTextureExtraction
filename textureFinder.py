@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os.path
-from curses.ascii import islower, isdigit
+from curses.ascii import islower, isupper, isalpha, isdigit
 from os import path, mkdir, rename
 import textureExtractor as texExtract
 
@@ -33,7 +33,8 @@ def findCMPRTextures():
                 if prevBytes[index].hex() == "00":
                     isFilename, startIndex = fnCheck(prevBytes, index)
                     if isFilename:
-                        textures.append(b''.join(prevBytes[startIndex:index]).decode("utf-8"))
+                        fnStr = b''.join(prevBytes[startIndex:index]).decode("utf-8")
+                        textures.append(fnStr)
                         prevBytes = []
                         break
                 index -= 1
@@ -43,16 +44,35 @@ def findCMPRTextures():
 def fnCheck(prevBytes, index):
     i = index - 1
     matchedBytes = 0
+    prevByte = prevBytes[i+1]
     while len(prevBytes)+i > 1:
         currByte = prevBytes[i]
-        if islower(int.from_bytes(currByte, "big")) or isdigit(int.from_bytes(currByte, "big")) or currByte.hex() == "5f":
+        if shouldMatch(currByte, prevByte, matchedBytes):
             matchedBytes += 1
         else:
             if matchedBytes >= 2:
+                if (matchedBytes == 2 and prevByte.hex() == "00"):
+                    return False, i
+                if (prevByte.hex() == "00"):
+                    i += 1
                 return True, i+1
             return False, i
+        prevByte = currByte
         i -= 1
     return False, i
+
+def shouldMatch(currByte, prevByte, matchedBytes):
+    currByteI = int.from_bytes(currByte, "big")
+    prevByteI = int.from_bytes(prevByte, "big")
+    shouldMatch = False
+
+    if (islower(currByteI) or isdigit(currByteI)):
+        shouldMatch = True
+    elif (isupper(currByteI) and (not isupper(prevByteI))):
+        shouldMatch = True
+    elif currByte.hex() == "5f" or (currByte.hex() == "00" and prevByte.hex() != "00"):
+        shouldMatch = True
+    return shouldMatch
 
 if __name__ == "__main__":
     main()

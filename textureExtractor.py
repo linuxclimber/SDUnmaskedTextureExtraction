@@ -23,14 +23,16 @@ def extractTexture(textureName):
         currByte = f.read(1)
         if not currByte:
             #eof
-            print("Texture: '" + textureName + " not found in file")
-            exit()
+            print("Texture: '" + textureName + "' not found in file")
+            break
 
         if currByte == textureName[matchedBytes].encode('utf-8'):
             if matchedBytes == 0 and (islower(int.from_bytes(prevByte, "big")) or isdigit(int.from_bytes(prevByte, "big")) or prevByte.hex() == "5f"):
                 matchedBytes = 0
             else:
                 matchedBytes += 1
+        elif (matchedBytes == 1) and (prevByte == currByte) and (currByte == textureName[0].encode('utf-8')):
+            matchedBytes = 1
         else:
             matchedBytes = 0
 
@@ -119,7 +121,7 @@ def createPNGFromRGBA32(width, height, imageData, fileName):
                     full[(x*blockSize) + blockx, (y*blockSize) + blocky, 3] = block[blockx,blocky,3]
 
     new_image = Image.fromarray(full, "RGBA")
-    new_image.save("textures/" + fileName + ".png")
+    new_image.save("textures/" + fileName.replace("\x00", ".") + ".png")
 
 
 def createPNGFromCMPR(width, height, imageData, fileName):
@@ -139,7 +141,7 @@ def createPNGFromCMPR(width, height, imageData, fileName):
                     full[(x*8) + blockx, (y*8) + blocky, 3] = block[blockx,blocky,3]
 
     new_image = Image.fromarray(full, "RGBA")
-    new_image.save("textures/" + fileName + ".png")
+    new_image.save("textures/" + fileName.replace("\x00", ".") + ".png")
 
 def generateNextCMPRBlock(imageData):
     block=[0]*4
