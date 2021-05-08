@@ -15,7 +15,6 @@ def main():
     extractTexture(textureName)
     
 def extractTexture(textureName):
-    #print("Attempting to extract " + textureName + " from TEXDIC.htd")
     f = open("TEXDIC.htd", "rb")
     matchedBytes = 0
     prevByte = None
@@ -37,7 +36,60 @@ def extractTexture(textureName):
 
         if (matchedBytes >= len(textureName)):
             if f.read(1).hex() == "00":
-                break
+
+                #Skip over the unknown metadata stuff
+                prevBytes = []
+                consecutiveNulls = 0
+                iTypeHex = ""
+                bytesRead = 0
+                while True:
+                    currByte = f.read(1)
+                    prevBytes.append(currByte)
+                    bytesRead += 1
+
+                    if not currByte:
+                        print("End of file reached while searching for image metadata!")
+                        exit() #eof
+
+                    if bytesRead >= 50:
+                        matchedBytes = 0
+                        break
+                    
+                    if currByte.hex() == "00":
+                        consecutiveNulls += 1
+                        if (consecutiveNulls == 4) and (f.tell() % 4 == 0):
+                            iTypeHex = b''.join(prevBytes[-8:-4]).hex()
+                            if (iTypeHex == "00000006" or iTypeHex == "0000000e"):
+                                #Read the height/width
+                                width = int.from_bytes(b''.join(prevBytes[-16:-12]), byteorder='big')
+                                height = int.from_bytes(b''.join(prevBytes[-12:-8]), byteorder='big')
+
+                                if width <=0 or height <= 0:
+                                    print("Invalid size.  Skipping")
+                                    return
+                                
+                                if width > 1920 or height > 1080:
+                                    print("Texture size too large. Skipping")
+                                    return
+
+                                iTypeHex = b''.join(prevBytes[-8:-4]).hex()
+
+                                if iTypeHex == "0000000e":
+                                    imageBytes = (width*height)//2
+                                    imageData = f.read(imageBytes)
+                                    f.read(32)
+                                    createPNGFromCMPR(width, height, imageData, textureName)
+                                    return
+                                elif iTypeHex == "00000006":
+                                    imageBytes = width*height*4
+                                    imageData = f.read(imageBytes)
+                                    createPNGFromRGBA32(width, height, imageData, textureName)
+                                    return
+                                else:
+                                    print("Not a CMPR or RGBA32 image- may not extract properly")
+                                    return
+                    else:
+                        consecutiveNulls = 0
             else:
                 matchedBytes = 0
 
@@ -45,58 +97,7 @@ def extractTexture(textureName):
 
 
 
-
-    #print("Successfully found texture '" + textureName + "' in file! Extracting...")
-    #Skip over the unknown metadata stuff
-    prevBytes = []
-    consecutiveNulls = 0
-    iTypeHex = ""
-    while True:
-        currByte = f.read(1)
-        prevBytes.append(currByte)
-
-        if not currByte:
-            print("End of file reached while searching for image metadata!")
-            break #eof
-        
-        if currByte.hex() == "00":
-            consecutiveNulls += 1
-            if (consecutiveNulls == 4) and (f.tell() % 4 == 0):
-                iTypeHex = b''.join(prevBytes[-8:-4]).hex()
-                if (iTypeHex == "00000006" or iTypeHex == "0000000e"):
-                    break
-        else:
-            consecutiveNulls = 0
-
-
-        
-    #Read the height/width
-    width = int.from_bytes(b''.join(prevBytes[-16:-12]), byteorder='big')
-    height = int.from_bytes(b''.join(prevBytes[-12:-8]), byteorder='big')
-    #print("Texture Size: " + str(width) + "x" + str(height))
-
-    if width <=0 or height <= 0:
-        print("Invalid size.  Skipping")
-        return
     
-    if width > 1920 or height > 1080:
-        print("Texture size too large. Skipping")
-        return
-
-    iTypeHex = b''.join(prevBytes[-8:-4]).hex()
-
-    if iTypeHex == "0000000e":
-        imageBytes = (width*height)//2
-        imageData = f.read(imageBytes)
-        f.read(32)
-        createPNGFromCMPR(width, height, imageData, textureName)
-    elif iTypeHex == "00000006":
-        imageBytes = width*height*4
-        imageData = f.read(imageBytes)
-        createPNGFromRGBA32(width, height, imageData, textureName)
-    else:
-        print("Not a CMPR or RGBA32 image- may not extract properly")
-        return
         
 
          
