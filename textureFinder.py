@@ -10,9 +10,9 @@ def main():
         exit()
     textures = findCMPRTextures()
     print(textures)
+    newFolderName = input("Enter desired texture folder name: ")
     for tName in (textures):
         texExtract.extractTexture(tName)
-    newFolderName = input("Enter desired texture folder name: ")
     rename("textures", newFolderName)
     mkdir("textures")
 
