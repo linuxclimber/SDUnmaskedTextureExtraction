@@ -5,7 +5,7 @@ from os import path
 
 from PIL import Image
 import numpy as np
-from curses.ascii import islower, isdigit
+from curses.ascii import isupper, islower, isdigit
 
 def main():
     if not path.exists("TEXDIC.htd"):
@@ -120,8 +120,7 @@ def createPNGFromRGBA32(width, height, imageData, fileName):
                     full[(x*blockSize) + blockx, (y*blockSize) + blocky, 2] = block[blockx,blocky,2]
                     full[(x*blockSize) + blockx, (y*blockSize) + blocky, 3] = block[blockx,blocky,3]
 
-    new_image = Image.fromarray(full, "RGBA")
-    new_image.save("textures/" + fileName.replace("\x00", ".") + ".png")
+    saveImage(fileName, full)
 
 
 def createPNGFromCMPR(width, height, imageData, fileName):
@@ -140,8 +139,7 @@ def createPNGFromCMPR(width, height, imageData, fileName):
                     full[(x*8) + blockx, (y*8) + blocky, 2] = block[blockx,blocky,2]
                     full[(x*8) + blockx, (y*8) + blocky, 3] = block[blockx,blocky,3]
 
-    new_image = Image.fromarray(full, "RGBA")
-    new_image.save("textures/" + fileName.replace("\x00", ".") + ".png")
+    saveImage(fileName, full)
 
 def generateNextCMPRBlock(imageData):
     block=[0]*4
@@ -224,6 +222,21 @@ def getOtherColors(c0, c1):
             c2[i] = (c0[i] + c1[i])//2
 
     return c2, c3
+
+
+
+def saveImage(fName, imageArray):
+    if isupper(fName[0]):
+        fName = fName[1:]
+    elif isdigit(fName[0]) and len(fName) > 2:
+        fName = fName[1:]
+    elif fName[0] == "_":
+        fName = fName[1:]
+
+    fName = fName.replace("\x00", ".")
+
+    new_image = Image.fromarray(imageArray, "RGBA")
+    new_image.save("textures/" + fName + ".png")
 
 if __name__ == "__main__":
     main()

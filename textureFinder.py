@@ -8,15 +8,15 @@ def main():
     if not path.exists("TEXDIC.htd"):
         print("TEXDIC.htd not found!  Please copy a TEXDIC file into this folder to continue")
         exit()
-    textures = findCMPRTextures()
-    print(textures)
+    textures = findTextures()
+    print("Found " + len(textures) + " images to extract")
     newFolderName = input("Enter desired texture folder name: ")
     for tName in (textures):
         texExtract.extractTexture(tName)
     rename("textures", newFolderName)
     mkdir("textures")
 
-def findCMPRTextures():
+def findTextures():
     f = open("TEXDIC.htd", "rb")
     textures = []
     prevBytes = []
