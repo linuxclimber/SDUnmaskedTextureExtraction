@@ -60,18 +60,47 @@ def extractTexture(textureName):
             print("Texture size too large. Skipping")
             return
 
-        if b''.join(prevBytes[-8:-4]).hex() != "0000000e":
-            print("Not a CMPR image- may not extract properly")
+        iTypeHex = b''.join(prevBytes[-8:-4]).hex()
+
+        if iTypeHex == "0000000e":
+            imageBytes = (width*height)//2
+            imageData = f.read(imageBytes)
+            f.read(32)
+            createPNGFromCMPR(width, height, imageData, textureName)
+        elif iTypeHex == "00000006":
+            imageBytes = width*height*4
+            imageData = f.read(imageBytes)
+            createPNGFromRGBA32(width, height, imageData, textureName)
+        else:
+            print("Not a CMPR or RGBA32 image- may not extract properly")
             return
         
-        imageBytes = (width*height)//2
-        imageData = f.read(imageBytes)
-        f.read(32)
-        createPNGFromCMPR(width, height, imageData, textureName)
+        
     else:
         print("Failed to find texture '" + textureName + "' in file!")
 
          
+def createPNGFromRGBA32(width, height, imageData, fileName):
+    full = [0]*4
+    full = [full]*width
+    full = [full]*height
+    full = np.array(full, dtype=np.uint8)
+    
+    blockSize=4
+    for x in range(height//blockSize):
+        for y in range(width//blockSize):
+            imageData, block = generateNextRGBA32Block(imageData)
+            for blockx in range(blockSize):
+                for blocky in range(blockSize):
+                    full[(x*blockSize) + blockx, (y*blockSize) + blocky, 0] = block[blockx,blocky,0]
+                    full[(x*blockSize) + blockx, (y*blockSize) + blocky, 1] = block[blockx,blocky,1]
+                    full[(x*blockSize) + blockx, (y*blockSize) + blocky, 2] = block[blockx,blocky,2]
+                    full[(x*blockSize) + blockx, (y*blockSize) + blocky, 3] = block[blockx,blocky,3]
+
+    new_image = Image.fromarray(full, "RGBA")
+    new_image.save("textures/" + fileName + ".png")
+
+
 def createPNGFromCMPR(width, height, imageData, fileName):
     full = [0]*4
     full = [full]*width
@@ -80,7 +109,7 @@ def createPNGFromCMPR(width, height, imageData, fileName):
     
     for x in range(height//8):
         for y in range(width//8):
-            imageData, block = generateNextBlock(imageData)
+            imageData, block = generateNextCMPRBlock(imageData)
             for blockx in range(8):
                 for blocky in range(8):
                     full[(x*8) + blockx, (y*8) + blocky, 0] = block[blockx,blocky,0]
@@ -91,14 +120,14 @@ def createPNGFromCMPR(width, height, imageData, fileName):
     new_image = Image.fromarray(full, "RGBA")
     new_image.save("textures/" + fileName + ".png")
 
-def generateNextBlock(imageData):
+def generateNextCMPRBlock(imageData):
     block=[0]*4
     block=[block]*8
     block=[block]*8
     block = np.array(block, dtype=np.uint8)
     for x in range(2):
         for y in range(2):
-            imageData, subBlock = generateSubBlock(imageData)
+            imageData, subBlock = generateCMPRSubBlock(imageData)
             for subx in range(4):
                 for suby in range(4):
                     block[(x*4) + subx, (y*4) + suby, 0] = subBlock[subx,suby,0]
@@ -107,7 +136,30 @@ def generateNextBlock(imageData):
                     block[(x*4) + subx, (y*4) + suby, 3] = subBlock[subx,suby,3]
     return imageData, block
 
-def generateSubBlock(imageData):
+def generateNextRGBA32Block(imageData):
+    block=[0]*4
+    block=[block]*4
+    block=[block]*4
+    block = np.array(block, dtype=np.uint8)
+
+    i = 0
+
+    for x in range(4):
+        for y in range(4):
+            block[x,y,3] = imageData[i]
+            block[x,y,0] = imageData[i+1]
+            i += 2
+
+    for x in range(4):
+        for y in range(4):
+            block[x,y,1] = imageData[i]
+            block[x,y,2] = imageData[i+1]
+            i += 2
+
+    return imageData[64:], block
+
+
+def generateCMPRSubBlock(imageData):
     sub=[0]*4
     sub=[sub]*4
     sub=[sub]*4
@@ -118,14 +170,14 @@ def generateSubBlock(imageData):
     color2, color3 = getOtherColors(color0, color1)
     colors = [color0, color1, color2, color3]
 
-    for y in range(4):
-        rowByte = imageData[4+y]
-        for x in range(4):
-            RGB = colors[(rowByte >> ((3-x)*2) & 0b11)]
-            sub[y,x,0] = RGB[0]
-            sub[y,x,1] = RGB[1]
-            sub[y,x,2] = RGB[2]
-            sub[y,x,3] = RGB[3]
+    for x in range(4):
+        rowByte = imageData[4+x]
+        for y in range(4):
+            RGB = colors[(rowByte >> ((3-y)*2) & 0b11)]
+            sub[x,y,0] = RGB[0]
+            sub[x,y,1] = RGB[1]
+            sub[x,y,2] = RGB[2]
+            sub[x,y,3] = RGB[3]
     return imageData[8:], sub
 
 

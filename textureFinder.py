@@ -26,7 +26,8 @@ def findCMPRTextures():
             break #eof
 
         prevBytes.append(currByte)
-        if b''.join(prevBytes[-8:]).hex() == "0000000e00000000":
+        hexStr = b''.join(prevBytes[-8:]).hex()
+        if hexStr == "0000000e00000000" or hexStr == "0000000600000000":
             index = -17
             #print("CMPR Texture found.  Getting filename now")
             while len(prevBytes)+index > 1 and index > -70:
