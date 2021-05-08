@@ -34,8 +34,10 @@ def extractTexture(textureName):
         #Skip over the unknown metadata stuff
         prevBytes = []
         consecutiveNulls = 0
-        while consecutiveNulls < 4 or (f.tell() % 4 != 0):
+        iTypeHex = ""
+        while True:
             currByte = f.read(1)
+            prevBytes.append(currByte)
 
             if not currByte:
                 print("End of file reached while searching for image metadata!")
@@ -43,9 +45,14 @@ def extractTexture(textureName):
             
             if currByte.hex() == "00":
                 consecutiveNulls += 1
+                if (consecutiveNulls == 4) and (f.tell() % 4 == 0):
+                    iTypeHex = b''.join(prevBytes[-8:-4]).hex()
+                    if (iTypeHex == "00000006" or iTypeHex == "0000000e"):
+                        break
             else:
                 consecutiveNulls = 0
-            prevBytes.append(currByte)
+
+
             
         #Read the height/width
         width = int.from_bytes(b''.join(prevBytes[-16:-12]), byteorder='big')
