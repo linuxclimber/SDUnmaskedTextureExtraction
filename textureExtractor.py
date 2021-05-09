@@ -70,8 +70,8 @@ def extractTexture(iFileName, textureName):
                                     print("Invalid size.  Skipping:", textureName)
                                     return
                                 
-                                if width > 1920 or height > 1080:
-                                    print("Texture size too large. Skipping:", textureName)
+                                if width > 3000 or height > 3000:
+                                    print("Texture size too large(" + str(width) + "x" + str(height) + "). Skipping:", textureName)
                                     return
 
                                 iTypeHex = b''.join(prevBytes[-8:-4]).hex()
