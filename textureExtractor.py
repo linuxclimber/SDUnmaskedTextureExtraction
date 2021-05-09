@@ -12,10 +12,10 @@ def main():
         print("TEXDIC.htd not found!  Please copy a TEXDIC file into this folder to continue")
         exit()
     textureName = input("Enter the texture name you want to extract: ")
-    extractTexture(textureName)
+    extractTexture("TEXDIC.htd", textureName)
     
-def extractTexture(textureName):
-    f = open("TEXDIC.htd", "rb")
+def extractTexture(iFileName, textureName):
+    f = open(iFileName, "rb")
     matchedBytes = 0
     prevByte = None
     
@@ -67,11 +67,11 @@ def extractTexture(textureName):
                                 height = int.from_bytes(b''.join(prevBytes[-12:-8]), byteorder='big')
 
                                 if width <=0 or height <= 0:
-                                    print("Invalid size.  Skipping")
+                                    print("Invalid size.  Skipping:", textureName)
                                     return
                                 
                                 if width > 1920 or height > 1080:
-                                    print("Texture size too large. Skipping")
+                                    print("Texture size too large. Skipping:", textureName)
                                     return
 
                                 iTypeHex = b''.join(prevBytes[-8:-4]).hex()

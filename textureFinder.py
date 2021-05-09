@@ -3,21 +3,44 @@ import os.path
 from curses.ascii import islower, isupper, isalpha, isdigit
 from os import path, mkdir, rename
 import textureExtractor as texExtract
+import sys, getopt
 
-def main():
-    if not path.exists("TEXDIC.htd"):
-        print("TEXDIC.htd not found!  Please copy a TEXDIC file into this folder to continue")
+def main(argv):
+    iFile = ""
+    oFolder = ""
+    try:
+       opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
+    except getopt.GetoptError:
+       print('test.py -i <inputfile> -o <outputfolder>')
+       sys.exit(2)
+    for opt, arg in opts:
+       if opt == '-h':
+          print('test.py -i <inputfile> -o <outputfolder>')
+          sys.exit()
+       elif opt in ("-i", "--ifile"):
+          iFile = arg
+       elif opt in ("-o", "--ofolder"):
+          oFolder = arg
+
+    if iFile == "":
+        iFile = "TEXDIC.htd"
+    if oFolder == "":
+        oFolder = input("Enter desired texture folder name: ")
+
+
+    if not path.exists(iFile):
+        print(iFile, " not found!  Please make sure '", iFile, "' exists before running")
         exit()
-    textures = findTextures()
-    print("Found " + len(textures) + " images to extract")
-    newFolderName = input("Enter desired texture folder name: ")
+    textures = findTextures(iFile)
+    print("Found ", len(textures), " images to extract")
+    
     for tName in (textures):
-        texExtract.extractTexture(tName)
-    rename("textures", newFolderName)
+        texExtract.extractTexture(iFile, tName)
+    rename("textures", oFolder)
     mkdir("textures")
 
-def findTextures():
-    f = open("TEXDIC.htd", "rb")
+def findTextures(iFilename):
+    f = open(iFilename, "rb")
     textures = []
     prevBytes = []
     while True:
@@ -45,9 +68,12 @@ def fnCheck(prevBytes, index):
     i = index - 1
     matchedBytes = 0
     prevByte = prevBytes[i+1]
+    matchNull = True
     while len(prevBytes)+i > 1:
         currByte = prevBytes[i]
-        if shouldMatch(currByte, prevByte, matchedBytes):
+        if shouldMatch(currByte, prevByte, matchedBytes, matchNull):
+            if currByte.hex() == "00":
+                matchNull = False
             matchedBytes += 1
         else:
             if matchedBytes >= 2:
@@ -61,7 +87,7 @@ def fnCheck(prevBytes, index):
         i -= 1
     return False, i
 
-def shouldMatch(currByte, prevByte, matchedBytes):
+def shouldMatch(currByte, prevByte, matchedBytes, matchNull):
     currByteI = int.from_bytes(currByte, "big")
     prevByteI = int.from_bytes(prevByte, "big")
     shouldMatch = False
@@ -70,9 +96,9 @@ def shouldMatch(currByte, prevByte, matchedBytes):
         shouldMatch = True
     elif (isupper(currByteI) and (not isupper(prevByteI))):
         shouldMatch = True
-    elif currByte.hex() == "5f" or (currByte.hex() == "00" and prevByte.hex() != "00"):
+    elif currByte.hex() == "5f" or (matchNull and currByte.hex() == "00" and prevByte.hex() != "00"):
         shouldMatch = True
     return shouldMatch
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
